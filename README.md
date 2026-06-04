@@ -30,8 +30,8 @@ LoanSight es un sistema completo de análisis de riesgo crediticio que cubre:
 
 | Capa | Tecnología |
 |---|---|
-| Warehouse | DuckDB 0.10 |
-| EDA / ML | Python 3.11 · pandas · scikit-learn · matplotlib · seaborn |
+| Warehouse | DuckDB 1.5 |
+| EDA / ML | Python 3.12 · pandas · scikit-learn · matplotlib |
 | Backend | FastAPI · Uvicorn · joblib |
 | Frontend | React 18 · Vite · Recharts |
 | Infra | Docker · Docker Compose |
@@ -44,7 +44,9 @@ LoanSight es un sistema completo de análisis de riesgo crediticio que cubre:
 loansight/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py               # Entrada FastAPI
+│   │   ├── main.py               # Entrada FastAPI (CORS + routers)
+│   │   ├── db.py                 # Conexión DuckDB de solo lectura
+│   │   ├── ml.py                 # Carga de artefactos .joblib para inferencia
 │   │   ├── routers/
 │   │   │   ├── olap.py           # GET /olap/query, /olap/dimensions
 │   │   │   └── predict.py        # POST /predict/classification, /predict/regression
@@ -67,7 +69,9 @@ loansight/
 │   │   │   ├── Explorer.jsx      # Pantalla 2 — explorador OLAP
 │   │   │   ├── Predictor.jsx     # Pantalla 3 — predicción en vivo
 │   │   │   └── Models.jsx        # Pantalla 4 — métricas de modelos
-│   │   ├── components/           # Componentes reutilizables
+│   │   ├── components/           # Layout, States (componentes reutilizables)
+│   │   ├── utils/
+│   │   │   └── format.js         # Formateo de métricas
 │   │   └── api/
 │   │       └── client.js         # Wrapper fetch → FastAPI
 │   ├── package.json
@@ -78,7 +82,7 @@ loansight/
 │   └── 03_modeling.ipynb         # Entrenamiento y evaluación de modelos
 ├── data/
 │   ├── raw/                      # Dataset original (no versionado en Git)
-│   └── processed/                # Dataset limpio generado por el pipeline
+│   └── processed/                # Warehouse DuckDB (generado por build_warehouse.py)
 ├── scripts/
 │   └── build_warehouse.py        # Carga datos crudos → DuckDB
 ├── docker-compose.yml
@@ -92,7 +96,7 @@ loansight/
 ## Requisitos previos
 
 - Docker >= 24.0 y Docker Compose >= 2.20
-- Python 3.11 (solo para el paso de descarga del dataset)
+- Python 3.11+ (recomendado 3.12) — para construir el warehouse y entrenar los modelos
 - Cuenta en Kaggle (para descargar el dataset)
 
 ---
@@ -117,8 +121,12 @@ mv ~/Downloads/accepted_2007_to_2018Q4.csv.gz data/raw/
 
 ### 3. Construir el warehouse
 
+Recomendado: trabaja dentro de un entorno virtual.
+
 ```bash
-pip install duckdb pandas
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r backend/requirements.txt
 python scripts/build_warehouse.py
 ```
 
@@ -126,12 +134,13 @@ Esto crea `data/processed/loansight.duckdb` con el esquema estrella cargado.
 
 ### 4. Entrenar los modelos
 
+Con el entorno virtual del paso 3 activo:
+
 ```bash
-pip install -r backend/requirements.txt
 python backend/app/models/train.py
 ```
 
-Genera los archivos `.joblib` en `backend/app/models/artifacts/`.
+Genera `reg_model.joblib`, `clf_model.joblib`, `metrics.json` y `metadata.json` en `backend/app/models/artifacts/`.
 
 ### 5. Levantar la aplicación
 
@@ -152,9 +161,13 @@ docker compose up --build
 |---|---|---|
 | GET | `/olap/query` | Consulta OLAP parametrizada sobre el warehouse |
 | GET | `/olap/dimensions` | Lista de dimensiones y valores disponibles |
+| GET | `/olap/kpis` | Indicadores globales (filtrables por año) |
+| GET | `/olap/year-range` | Rango de años cubierto por el warehouse |
 | POST | `/predict/classification` | Predice probabilidad de default |
 | POST | `/predict/regression` | Predice tasa de interés estimada |
 | GET | `/models/metrics` | Métricas de evaluación de todos los modelos |
+| GET | `/models/metadata` | Opciones de categorías y rangos (para el formulario) |
+| GET | `/health` | Estado del warehouse y los modelos |
 
 Documentación interactiva completa en `http://localhost:8000/docs`.
 
