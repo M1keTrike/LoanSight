@@ -1,7 +1,6 @@
 # AI_USAGE.md — LoanSight
 
-Declaración de uso de inteligencia artificial por componente,
-según la política del curso (Sección 8 del enunciado).
+
 
 ---
 
