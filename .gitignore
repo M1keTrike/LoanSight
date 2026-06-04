@@ -1,0 +1,36 @@
+# ---- Data (no versionado, salvo el .gitkeep para conservar la carpeta) ----
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+*.csv
+*.csv.gz
+*.duckdb
+*.duckdb.wal
+
+# ---- Modelos serializados ----
+backend/app/models/artifacts/
+*.joblib
+*.pkl
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# ---- Node / Frontend ----
+node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+
+# ---- Editor / OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
