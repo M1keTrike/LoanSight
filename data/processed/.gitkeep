@@ -1,0 +1,2 @@
+# Aquí se genera loansight.duckdb al ejecutar scripts/build_warehouse.py.
+# El archivo .duckdb NO se sube al repositorio (se regenera).
